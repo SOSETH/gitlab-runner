@@ -9,7 +9,7 @@
     repo: "{{ item }}"
     mode: "0644"
     update_cache: yes
-    state: present
+    state: absent
   with_items: "{{ gitlab_runner_apt_old_repos }}"
 
 - name: Add new GitLab APT repo
@@ -23,7 +23,7 @@
 - name: Remove old GitLab Runner
   apt:
     name: gitlab-ci-multi-runner
-    state: present
+    state: absent
     update_cache: yes
     cache_valid_time: 1800
   register: oldrun
