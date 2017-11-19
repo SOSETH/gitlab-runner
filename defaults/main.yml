@@ -1,8 +1,12 @@
 ---
 gitlab_runner_apt_key_url: https://packages.gitlab.com/gpg.key
+gitlab_runner_apt_old_repos:
+  - deb https://packages.gitlab.com/runner/gitlab-ci-multi-runner/debian/ {{ ansible_distribution_release }} main
+  - deb-src https://packages.gitlab.com/runner/gitlab-ci-multi-runner/debian/ {{ ansible_distribution_release }} main
+
 gitlab_runner_apt_repos:
-  - deb https://packages.gitlab.com/runner/gitlab-ci-multi-runner/debian/ jessie main
-  - deb-src https://packages.gitlab.com/runner/gitlab-ci-multi-runner/debian/ jessie main
+  - deb https://packages.gitlab.com/runner/gitlab-runner/debian/ {{ ansible_distribution_release }} main
+  - deb-src https://packages.gitlab.com/runner/gitlab-runner/debian/ {{ ansible_distribution_release }} main
 
 gitlab_runner:
   concurrent_builds: 5
@@ -12,4 +16,4 @@ gitlab_runner:
       ci_server: https://redacted
       token: redacted
       executor: docker
-      docker_image: debian:jessie
+      docker_image: debian:{{ ansible_distribution_release }}
