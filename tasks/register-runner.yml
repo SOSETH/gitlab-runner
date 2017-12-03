@@ -21,6 +21,7 @@
   shell: gitlab-ci-multi-runner list 2>&1 | egrep '^{{_config.name}}\s+'
   failed_when: false
   changed_when: false
+  check_mode: False
   register: check_if_registered_result
 
 - block:
