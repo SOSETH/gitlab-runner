@@ -47,7 +47,7 @@
   when: oldrun.changed and newrun.changed
 
 - name: Register new runners
-  include: register-runner.yml
+  include_tasks: register-runner.yml
   with_items: "{{ gitlab_runner.runners | default([]) }}"
 
 - name: Adjust concurrent build count
