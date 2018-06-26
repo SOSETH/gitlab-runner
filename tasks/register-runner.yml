@@ -1,39 +1,33 @@
 ---
-- name: Copy runner configuration
-  set_fact:
-    _config: "{{ item }}"
+  - name: Copy runner configuration
+    set_fact:
+      _config: "{{ item }}"
 
-- name: Check if requested executor is supported
-  assert:
-    that: "_config.executor in ['docker']"
-  when: _config.state != 'absent'
+  - name: Check if requested executor is supported
+    assert:
+      that: "_config.executor in ['docker']"
+    when: _config.state != 'absent'
 
-- name: Validate configuration parameters
-  assert:
-    that: "_config.state in ['present', 'absent']"
+  - name: Validate configuration parameters
+    assert:
+      that: "_config.state in ['present', 'absent']"
 
-- name: Precalculate some configuration options
-  set_fact:
-    _taglist: "{{_config.tags|default([])|join(',')}}"
-    _docker_image: "{{' --docker-image ' + _config.docker_image if _config.executor == 'docker' else ''}}"
+  - name: Precalculate some configuration options
+    set_fact:
+      _taglist: "{{_config.tags|default([])|join(',')}}"
+      _docker_image: "{{' --docker-image ' + _config.docker_image if _config.executor == 'docker' else ''}}"
 
-- name: Check if runner already registered
-  shell: gitlab-ci-multi-runner list 2>&1 | egrep '^{{_config.name}}\s+'
-  failed_when: false
-  changed_when: false
-  check_mode: False
-  register: check_if_registered_result
+  - name: Check if runner already registered
+    shell: gitlab-ci-multi-runner list 2>&1 | egrep '^{{_config.name}}\s+'
+    failed_when: false
+    changed_when: false
+    check_mode: False
+    register: check_if_registered_result
 
-- block:
+  - name: Register runner '{{_config.name}}'
+    command: "gitlab-ci-multi-runner register -n --name '{{_config.name}}' -r '{{_config.token}}' --executor '{{_config.executor}}' -u '{{_config.ci_server}}' --tag-list '{{_taglist}}' {{_docker_image}}"
+    when: (check_if_registered_result.rc != 0) and (_config.state == 'present')
 
-    - name: Register runner '{{_config.name}}'
-      command: "gitlab-ci-multi-runner register -n --name '{{_config.name}}' -r '{{_config.token}}' --executor '{{_config.executor}}' -u '{{_config.ci_server}}' --tag-list '{{_taglist}}' {{_docker_image}}"
-
-  when: (check_if_registered_result.rc != 0) and (_config.state == 'present')
-
-- block:
-
-    - name: Unregister runner '{{_config.name}}'
-      command: "gitlab-ci-multi-runner unregister -n '{{_config.name}}'"
-
-  when: (check_if_registered_result.rc == 0) and (_config.state == 'absent') 
+  - name: Unregister runner '{{_config.name}}'
+    command: "gitlab-ci-multi-runner unregister -n '{{_config.name}}'"
+    when: (check_if_registered_result.rc == 0) and (_config.state == 'absent')

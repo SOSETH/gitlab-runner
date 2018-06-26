@@ -1,5 +1,8 @@
 ---
-gitlab_runner_apt_key_url: https://packages.gitlab.com/gpg.key
+# See README.md for this
+gitlab_runner: []
+
+# You probably don't need to change these:
 gitlab_runner_apt_old_repos:
   - deb https://packages.gitlab.com/runner/gitlab-ci-multi-runner/debian/ {{ ansible_distribution_release }} main
   - deb-src https://packages.gitlab.com/runner/gitlab-ci-multi-runner/debian/ {{ ansible_distribution_release }} main
@@ -7,13 +10,3 @@ gitlab_runner_apt_old_repos:
 gitlab_runner_apt_repos:
   - deb https://packages.gitlab.com/runner/gitlab-runner/debian/ {{ ansible_distribution_release }} main
   - deb-src https://packages.gitlab.com/runner/gitlab-runner/debian/ {{ ansible_distribution_release }} main
-
-gitlab_runner:
-  concurrent_builds: 5
-  runners:
-    - name: "{{ ansible_hostname }}"
-      state: present
-      ci_server: https://redacted
-      token: redacted
-      executor: docker
-      docker_image: debian:{{ ansible_distribution_release }}

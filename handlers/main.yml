@@ -1,5 +1,6 @@
 ---
-- name: reload config
-  service:
-    name: gitlab-runner.service
-    state: restarted
+  - name: reload config
+    become: True
+    service:
+      name: gitlab-runner.service
+      state: restarted

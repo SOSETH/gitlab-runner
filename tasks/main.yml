@@ -1,60 +1,89 @@
 ---
-- name: Add GitLab repository key
-  become: True
-  apt_key:
-    url: "{{ gitlab_runner_apt_key_url }}"
-    state: present
+  - name: Install prerequisites
+    become: True
+    apt: name={{ item }} state=present update_cache=yes cache_valid_time=1800
+    with_items:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg2
+      - software-properties-common
 
-- name: Remove old GitLab APT repo
-  become: True
-  apt_repository:
-    repo: "{{ item }}"
-    mode: "0644"
-    update_cache: yes
-    state: absent
-  with_items: "{{ gitlab_runner_apt_old_repos }}"
+  - name: Add docker repository key
+    become: True
+    apt_key:
+      data: "{{ lookup('files', 'docker.asc') }}"
 
-- name: Add new GitLab APT repo
-  become: True
-  apt_repository:
-    repo: "{{ item }}"
-    mode: "0644"
-    update_cache: yes
-    state: present
-  with_items: "{{ gitlab_runner_apt_repos }}"
+  - name: Add docker repository
+    become: True
+    apt_repository: repo="deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable" state=present
+    register: repochanged
 
-- name: Remove old GitLab Runner
-  become: True
-  apt:
-    name: gitlab-ci-multi-runner
-    state: absent
-    update_cache: yes
-    cache_valid_time: 1800
-  register: oldrun
+  - name: Add GitLab repository key
+    become: True
+    apt_key:
+      data: "{{ lookup('files', 'gitlab.asc') }}"
+      state: present
 
-- name: Install new GitLab Runner
-  become: True
-  apt:
-    name: gitlab-runner
-    state: present
-    update_cache: yes
-    cache_valid_time: 1800
-  register: newrun
+  - name: Remove old GitLab APT repo
+    become: True
+    apt_repository:
+      repo: "{{ item }}"
+      mode: "0644"
+      update_cache: yes
+      state: absent
+    with_items: "{{ gitlab_runner_apt_old_repos }}"
 
-- name: Fixup upgrade
-  become: True
-  command: /usr/share/gitlab-runner/post-install
-  when: oldrun.changed and newrun.changed
+  - name: Add new GitLab APT repo
+    become: True
+    apt_repository:
+      repo: "{{ item }}"
+      mode: "0644"
+      update_cache: yes
+      state: present
+    with_items: "{{ gitlab_runner_apt_repos }}"
+    register: newrepochanged
 
-- name: Register new runners
-  include_tasks: register-runner.yml
-  with_items: "{{ gitlab_runner.runners | default([]) }}"
+  - name: Refresh apt cache
+    when: repochanged.changed or newrepochanged.changed
+    become: True
+    apt: update_cache=yes
 
-- name: Adjust concurrent build count
-  become: True
-  lineinfile:
-    dest: "/etc/gitlab-runner/config.toml"
-    regexp: '^concurrent = (\d+)$'
-    line: 'concurrent = {{ gitlab_runner.concurrent_builds }}'
-    state: present
-  notify: reload config
+  - name: Remove old GitLab Runner
+    become: True
+    apt:
+      name: gitlab-ci-multi-runner
+      state: absent
+      update_cache: yes
+      cache_valid_time: 1800
+    register: oldrun
+
+  - name: Install new GitLab Runner
+    become: True
+    apt:
+      name: "{{ item }}"
+      state: present
+      update_cache: yes
+      cache_valid_time: 1800
+    with_items:
+      - gitlab-runner
+      - docker-ce
+    register: newrun
+
+  - name: Fixup upgrade
+    become: True
+    command: /usr/share/gitlab-runner/post-install
+    when: oldrun.changed and newrun.changed
+
+  - name: Register new runners
+    include_tasks: register-runner.yml
+    with_items: "{{ gitlab_runner.runners | default([]) }}"
+
+  - name: Adjust concurrent build count
+    become: True
+    lineinfile:
+      dest: "/etc/gitlab-runner/config.toml"
+      regexp: '^concurrent = (\d+)$'
+      line: 'concurrent = {{ gitlab_runner.concurrent_builds }}'
+      state: present
+    notify: reload config
