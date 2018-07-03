@@ -12,7 +12,8 @@
   - name: Add docker repository key
     become: True
     apt_key:
-      data: "{{ lookup('files', 'docker.asc') }}"
+      data: "{{ lookup('file', 'docker.asc') }}"
+      state: present
 
   - name: Add docker repository
     become: True
@@ -22,7 +23,7 @@
   - name: Add GitLab repository key
     become: True
     apt_key:
-      data: "{{ lookup('files', 'gitlab.asc') }}"
+      data: "{{ lookup('file', 'gitlab.asc') }}"
       state: present
 
   - name: Remove old GitLab APT repo
