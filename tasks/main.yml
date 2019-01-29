@@ -1,13 +1,16 @@
 ---
   - name: Install prerequisites
     become: True
-    apt: name={{ item }} state=present update_cache=yes cache_valid_time=1800
-    with_items:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - gnupg2
-      - software-properties-common
+    apt:
+      name:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg2
+        - software-properties-common
+      state: present
+      update_cache: True
+      cache_valid_time: 1800
 
   - name: Add docker repository key
     become: True
@@ -62,13 +65,12 @@
   - name: Install new GitLab Runner
     become: True
     apt:
-      name: "{{ item }}"
+      name:
+        - gitlab-runner
+        - docker-ce
       state: present
       update_cache: yes
       cache_valid_time: 1800
-    with_items:
-      - gitlab-runner
-      - docker-ce
     register: newrun
 
   - name: Fixup upgrade
