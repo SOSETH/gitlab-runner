@@ -5,7 +5,7 @@
 
   - name: Check if requested executor is supported
     assert:
-      that: "_config.executor in ['docker']"
+      that: "_config.executor in ['docker', 'shell']"
     when: _config.state != 'absent'
 
   - name: Validate configuration parameters
